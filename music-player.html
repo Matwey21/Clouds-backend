@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoundHub - Музыкальный плеер</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(31, 41, 55, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #374151;
+            z-index: 40;
+            padding: 1rem 2rem;
+        }
+
+        .header-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .logo {
+            font-size: 1.75rem;
+            font-weight: bold;
+            background: linear-gradient(to right, #f97316, #ef4444);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        nav {
+            display: flex;
+            gap: 2rem;
+        }
+
+        nav button {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            padding: 0.5rem 0;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        nav button:hover, nav button.active {
+            color: #fff;
+            border-bottom-color: #f97316;
+        }
+
+        .search-input {
+            flex: 1;
+            max-width: 300px;
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 9999px;
+            padding: 0.5rem 1rem;
+            color: #fff;
+            font-size: 0.875rem;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #f97316;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+        }
+
+        .search-input::placeholder {
+            color: #6b7280;
+        }
+
+        /* Main Content */
+        main {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 6rem 2rem 12rem;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .page-title {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-subtitle {
+            color: #9ca3af;
+            margin-bottom: 2rem;
+        }
+
+        /* Filter Buttons */
+        .filter-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #1f2937;
+            color: #d1d5db;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: #f97316;
+            color: #fff;
+        }
+
+        /* Upload Section */
+        .upload-section {
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            border: 2px dashed #f97316;
+            border-radius: 1rem;
+            padding: 3rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-section:hover {
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            border-color: #ff6b4a;
+            transform: translateY(-2px);
+        }
+
+        .upload-section input[type="file"] {
+            display: none;
+        }
+
+        .upload-text {
+            font-size: 1.25rem;
+            margin: 1rem 0;
+            color: #d1d5db;
+        }
+
+        .upload-hint {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        /* Tracks Grid */
+        .tracks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .track-card {
+            background: #1f2937;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #374151;
+        }
+
+        .track-card:hover {
+            background: #111827;
+            border-color: #f97316;
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.2);
+            transform: translateY(-4px);
+        }
+
+        .track-image {
+            height: 180px;
+            background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .track-image:after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0);
+            transition: background 0.3s;
+        }
+
+        .track-card:hover .track-image:after {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .play-btn-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .track-card:hover .play-btn-overlay {
+            opacity: 1;
+        }
+
+        .play-btn-overlay button {
+            background: #f97316;
+            color: white;
+            border: none;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .play-btn-overlay button:hover {
+            background: #ff6b4a;
+            transform: scale(1.1);
+        }
+
+        .track-info {
+            padding: 1rem;
+        }
+
+        .track-title {
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .track-artist {
+            color: #9ca3af;
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .track-meta {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .track-source {
+            background: rgba(249, 115, 22, 0.2);
+            color: #fbbf24;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+        }
+
+        .track-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 0.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .play-small-btn {
+            background: #f97316;
+            color: white;
+        }
+
+        .play-small-btn:hover {
+            background: #ff6b4a;
+        }
+
+        .like-btn {
+            background: #374151;
+            color: #d1d5db;
+        }
+
+        .like-btn:hover {
+            background: #4b5563;
+        }
+
+        .like-btn.liked {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* Track List */
+        .tracks-list {
+            space-y: 0.75rem;
+        }
+
+        .track-item {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s;
+        }
+
+        .track-item:hover {
+            background: #111827;
+            border-color: #f97316;
+        }
+
+        .track-item .track-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 0.5rem;
+            margin: 0;
+            flex-shrink: 0;
+        }
+
+        .track-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .track-item-title {
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .track-item-meta {
+            color: #9ca3af;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .track-item-play-btn {
+            background: #f97316;
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .track-item-play-btn:hover {
+            background: #ff6b4a;
+            transform: scale(1.05);
+        }
+
+        /* Profile */
+        .profile-banner {
+            height: 300px;
+            border-radius: 1rem;
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            background-size: cover;
+            background-position: center;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-banner-emoji {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8rem;
+            opacity: 0.5;
+        }
+
+        .profile-edit-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: #f97316;
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.25rem;
+            transition: all 0.3s;
+        }
+
+        .profile-edit-btn:hover {
+            background: #ff6b4a;
+        }
+
+        .profile-header {
+            display: flex;
+            gap: 2rem;
+            align-items: flex-end;
+            margin-bottom: 2rem;
+        }
+
+        .profile-avatar {
+            width: 200px;
+            height: 200px;
+            border-radius: 1rem;
+            border: 4px solid #f97316;
+            background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 6rem;
+            flex-shrink: 0;
+            background-size: cover;
+            background-position: center;
+            overflow: hidden;
+        }
+
+        .profile-info h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .profile-bio {
+            color: #d1d5db;
+            margin-bottom: 1rem;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.875rem;
+        }
+
+        .profile-stat {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .profile-stat-number {
+            font-weight: bold;
+            color: #f97316;
+        }
+
+        .profile-stat-label {
+            color: #9ca3af;
+        }
+
+        .profile-gifs {
+            margin-bottom: 2rem;
+        }
+
+        .profile-gifs h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .gifs-container {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .gif-item {
+            background: #1f2937;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #374151;
+        }
+
+        .gif-item:hover {
+            transform: scale(1.1);
+            background: #111827;
+        }
+
+        /* Player */
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #0f172a;
+            border-top: 1px solid #374151;
+            z-index: 50;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 3px;
+            background: #374151;
+            cursor: pointer;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #f97316;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .player-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .player-track {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .player-image {
+            width: 70px;
+            height: 70px;
+            border-radius: 0.5rem;
+            background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            flex-shrink: 0;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .player-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .player-title {
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .player-artist {
+            color: #9ca3af;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .player-btn {
+            background: #f97316;
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            transition: all 0.3s;
+        }
+
+        .player-btn:hover {
+            background: #ff6b4a;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 150px;
+        }
+
+        .volume-slider {
+            flex: 1;
+            cursor: pointer;
+            accent-color: #f97316;
+        }
+
+        .volume-percent {
+            color: #9ca3af;
+            font-size: 0.75rem;
+            min-width: 30px;
+            text-align: right;
+        }
+
+        .player-empty {
+            text-align: center;
+            color: #6b7280;
+            padding: 1rem;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 60;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1f2937;
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: color 0.3s;
+        }
+
+        .close-btn:hover {
+            color: #fff;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="file"],
+        .form-group textarea {
+            width: 100%;
+            background: #111827;
+            border: 1px solid #374151;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            color: #fff;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="file"]:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #f97316;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .preview-img {
+            margin-top: 0.5rem;
+            max-width: 100px;
+            max-height: 100px;
+            border-radius: 0.5rem;
+            border: 2px solid #f97316;
+        }
+
+        .save-btn {
+            width: 100%;
+            background: #f97316;
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+
+        .save-btn:hover {
+            background: #ff6b4a;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            nav {
+                display: none;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
+
+            .tracks-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+
+            .profile-header {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .profile-info h1 {
+                font-size: 2rem;
+            }
+
+            .player-controls {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .volume-control {
+                display: none;
+            }
+
+            .player-content {
+                padding: 0.75rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <div class="logo">♪ SoundHub</div>
+            <nav>
+                <button class="nav-btn active" onclick="showPage('home')">Главная</button>
+                <button class="nav-btn" onclick="showPage('likes')">Избранное</button>
+                <button class="nav-btn" onclick="showPage('profile')">Профиль</button>
+            </nav>
+            <input type="text" class="search-input" placeholder="Поиск треков...">
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- HOME PAGE -->
+        <div id="home" class="page active">
+            <h2 class="page-title">Треки дня, недели, года</h2>
+            <p class="page-subtitle">Загрузи свои MP3 файлы и слушай музыку</p>
+
+            <div class="upload-section" onclick="document.getElementById('uploadInput').click()">
+                <div style="font-size: 2rem;">📤</div>
+                <div class="upload-text">Нажми чтобы загрузить треки</div>
+                <div class="upload-hint">или перетащи MP3 файлы сюда</div>
+                <input type="file" id="uploadInput" accept=".mp3,.wav,.flac,.aac,.m4a" multiple>
+            </div>
+
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="setFilter('day')">📅 Треки дня</button>
+                <button class="filter-btn" onclick="setFilter('week')">📊 Треки недели</button>
+                <button class="filter-btn" onclick="setFilter('year')">🏆 Треки года</button>
+            </div>
+
+            <div class="tracks-grid" id="tracksGrid">
+                <!-- Треки будут добавлены здесь -->
+            </div>
+        </div>
+
+        <!-- LIKES PAGE -->
+        <div id="likes" class="page">
+            <h2 class="page-title">❤️ Ваше избранное</h2>
+            <div class="tracks-list" id="likesList">
+                <p style="text-align: center; color: #9ca3af; padding: 2rem;">Вы еще не добавили треки в избранное</p>
+            </div>
+        </div>
+
+        <!-- PROFILE PAGE -->
+        <div id="profile" class="page">
+            <div class="profile-banner" id="bannerImage" style="background-image: url(null)">
+                <div class="profile-banner-emoji" id="bannerEmoji">🎵</div>
+                <button class="profile-edit-btn" onclick="showProfileEdit()">⚙️</button>
+            </div>
+
+            <div class="profile-header">
+                <div class="profile-avatar" id="avatarImage" style="background-image: url(null)">
+                    <div id="avatarEmoji">👤</div>
+                </div>
+                <div class="profile-info">
+                    <h1 id="profileUsername">Music Lover</h1>
+                    <div class="profile-bio" id="profileBio">Добро пожаловать в мою музыкальную коллекцию</div>
+                    <div class="profile-stats">
+                        <div class="profile-stat">
+                            <span class="profile-stat-number" id="followers">1234</span>
+                            <span class="profile-stat-label">подписчиков</span>
+                        </div>
+                        <div class="profile-stat">
+                            <span class="profile-stat-number" id="following">567</span>
+                            <span class="profile-stat-label">подписок</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-gifs">
+                <h3>Моя коллекция</h3>
+                <div class="gifs-container" id="gifsContainer">
+                    <div class="gif-item">🎵</div>
+                    <div class="gif-item">🎶</div>
+                    <div class="gif-item">♪</div>
+                    <div class="gif-item">♫</div>
+                </div>
+            </div>
+
+            <h3 style="font-size: 1.25rem; margin-bottom: 1rem;">🎵 Мои треки</h3>
+            <div class="tracks-grid" id="profileTracks">
+                <p style="grid-column: 1/-1; text-align: center; color: #9ca3af; padding: 2rem;">Добавьте треки в ваш профиль</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Profile Edit Modal -->
+    <div id="profileModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Редактировать профиль</h2>
+                <button class="close-btn" onclick="closeProfileEdit()">✕</button>
+            </div>
+
+            <div class="form-group">
+                <label>Имя</label>
+                <input type="text" id="editUsername" value="Music Lover">
+            </div>
+
+            <div class="form-group">
+                <label>Bio</label>
+                <textarea id="editBio">Добро пожаловать в мою музыкальную коллекцию</textarea>
+            </div>
+
+            <div class="form-group">
+                <label>📸 Загрузить аватар (JPG, PNG)</label>
+                <input type="file" id="avatarFile" accept="image/*">
+                <div id="avatarPreview"></div>
+            </div>
+
+            <div class="form-group">
+                <label>🖼️ Загрузить баннер (JPG, PNG)</label>
+                <input type="file" id="bannerFile" accept="image/*">
+                <div id="bannerPreview"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Эмодзи аватара (если нет файла)</label>
+                <input type="text" id="editAvatarEmoji" value="👤" maxlength="2">
+            </div>
+
+            <div class="form-group">
+                <label>Эмодзи баннера (если нет файла)</label>
+                <input type="text" id="editBannerEmoji" value="🎵" maxlength="2">
+            </div>
+
+            <button class="save-btn" onclick="saveProfile()">Сохранить</button>
+        </div>
+    </div>
+
+    <!-- Player -->
+    <footer>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="player-content">
+            <div id="playerContent">
+                <div class="player-empty">Выберите трек для прослушивания</div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Audio Element -->
+    <audio id="audioPlayer"></audio>
+
+    <script>
+        // Data
+        let tracks = [];
+        let likedTracks = [];
+        let profileTracks = [];
+        let currentFilter = 'day';
+        let currentTrack = null;
+
+        let profile = {
+            username: 'Music Lover',
+            bio: 'Добро пожаловать в мою музыкальную коллекцию',
+            avatar: null,
+            banner: null,
+            avatarEmoji: '👤',
+            bannerEmoji: '🎵'
+        };
+
+        const audio = document.getElementById('audioPlayer');
+
+        // Upload Tracks
+        document.getElementById('uploadInput').addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            files.forEach(file => {
+                const url = URL.createObjectURL(file);
+                const name = file.name.replace(/\.[^/.]+$/, '');
+                tracks.push({
+                    id: Date.now() + Math.random(),
+                    title: name,
+                    artist: 'Неизвестный артист',
+                    source: 'Мой плеер',
+                    url: url,
+                    duration: '0:00',
+                    image: '🎵'
+                });
+            });
+            renderTracks();
+        });
+
+        // Drag and drop
+        document.body.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            document.querySelector('.upload-section').style.borderColor = '#ff6b4a';
+        });
+
+        document.body.addEventListener('dragleave', () => {
+            document.querySelector('.upload-section').style.borderColor = '#f97316';
+        });
+
+        document.body.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('audio/'));
+            document.getElementById('uploadInput').files = new DataTransfer().items.length > 0 ? new DataTransfer().files : files;
+
+            files.forEach(file => {
+                const url = URL.createObjectURL(file);
+                const name = file.name.replace(/\.[^/.]+$/, '');
+                tracks.push({
+                    id: Date.now() + Math.random(),
+                    title: name,
+                    artist: 'Неизвестный артист',
+                    source: 'Мой плеер',
+                    url: url,
+                    duration: '0:00',
+                    image: '🎵'
+                });
+            });
+            renderTracks();
+        });
+
+        // Show Page
+        function showPage(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(page).classList.add('active');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        // Set Filter
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderTracks();
+        }
+
+        // Render Tracks
+        function renderTracks() {
+            const grid = document.getElementById('tracksGrid');
+            const filtered = getFilteredTracks();
+
+            grid.innerHTML = filtered.map(track => `
+                <div class="track-card">
+                    <div class="track-image">
+                        ${track.image}
+                        <div class="play-btn-overlay">
+                            <button onclick="playTrack(${track.id})">▶</button>
+                        </div>
+                    </div>
+                    <div class="track-info">
+                        <div class="track-title">${track.title}</div>
+                        <div class="track-artist">${track.artist}</div>
+                        <div class="track-meta">
+                            <span class="track-source">${track.source}</span>
+                        </div>
+                        <div class="track-actions">
+                            <button class="action-btn play-small-btn" onclick="playTrack(${track.id})">▶ Play</button>
+                            <button class="action-btn like-btn ${likedTracks.includes(track.id) ? 'liked' : ''}" onclick="toggleLike(${track.id})">♥</button>
+                            <button class="action-btn like-btn" onclick="addToProfile(${track.id})">⬇</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Get Filtered Tracks
+        function getFilteredTracks() {
+            const count = currentFilter === 'day' ? 4 : currentFilter === 'week' ? 8 : 12;
+            return tracks.slice(0, count);
+        }
+
+        // Play Track
+        function playTrack(id) {
+            const track = tracks.find(t => t.id === id);
+            if (!track) return;
+
+            currentTrack = track;
+            audio.src = track.url;
+            audio.play();
+            updatePlayer();
+        }
+
+        // Update Player
+        function updatePlayer() {
+            const player = document.getElementById('playerContent');
+            if (!currentTrack) {
+                player.innerHTML = '<div class="player-empty">Выберите трек для прослушивания</div>';
+                return;
+            }
+
+            player.innerHTML = `
+                <div class="player-track">
+                    <div class="player-image">${currentTrack.image}</div>
+                    <div class="player-info">
+                        <div class="player-title">${currentTrack.title}</div>
+                        <div class="player-artist">${currentTrack.artist}</div>
+                    </div>
+                </div>
+                <div class="player-controls">
+                    <button class="player-btn" onclick="togglePlay()">
+                        ${audio.paused ? '▶' : '⏸'}
+                    </button>
+                    <div class="volume-control">
+                        <span>🔊</span>
+                        <input type="range" min="0" max="100" value="70" class="volume-slider" onchange="setVolume(this.value)">
+                        <div class="volume-percent" id="volumePercent">70%</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Toggle Play
+        function togglePlay() {
+            if (!currentTrack) return;
+            if (audio.paused) {
+                audio.play();
+            } else {
+                audio.pause();
+            }
+            updatePlayer();
+        }
+
+        // Set Volume
+        function setVolume(val) {
+            audio.volume = val / 100;
+            document.getElementById('volumePercent').textContent = val + '%';
+        }
+
+        // Audio Events
+        audio.addEventListener('timeupdate', () => {
+            const percent = (audio.currentTime / audio.duration) * 100;
+            document.getElementById('progressFill').style.width = percent + '%';
+        });
+
+        audio.addEventListener('ended', () => {
+            updatePlayer();
+        });
+
+        // Toggle Like
+        function toggleLike(id) {
+            const idx = likedTracks.indexOf(id);
+            if (idx > -1) {
+                likedTracks.splice(idx, 1);
+            } else {
+                likedTracks.push(id);
+            }
+            renderTracks();
+            renderLikes();
+        }
+
+        // Render Likes
+        function renderLikes() {
+            const list = document.getElementById('likesList');
+            const liked = tracks.filter(t => likedTracks.includes(t.id));
+
+            if (liked.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #9ca3af; padding: 2rem;">Вы еще не добавили треки в избранное</p>';
+                return;
+            }
+
+            list.innerHTML = liked.map((track, idx) => `
+                <div class="track-item">
+                    <div class="player-image">${track.image}</div>
+                    <div class="track-item-info">
+                        <div class="track-item-title">${track.title}</div>
+                        <div class="track-item-meta">${track.artist} • ${track.source}</div>
+                    </div>
+                    <button class="track-item-play-btn" onclick="playTrack(${track.id})">▶</button>
+                </div>
+            `).join('');
+        }
+
+        // Add to Profile
+        function addToProfile(id) {
+            if (!profileTracks.includes(id)) {
+                profileTracks.push(id);
+                renderProfileTracks();
+            }
+        }
+
+        // Render Profile Tracks
+        function renderProfileTracks() {
+            const grid = document.getElementById('profileTracks');
+            const profile = tracks.filter(t => profileTracks.includes(t.id));
+
+            if (profile.length === 0) {
+                grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #9ca3af; padding: 2rem;">Добавьте треки в ваш профиль</p>';
+                return;
+            }
+
+            grid.innerHTML = profile.map(track => `
+                <div class="track-card">
+                    <div class="track-image">${track.image}</div>
+                    <div class="track-info">
+                        <div class="track-title">${track.title}</div>
+                        <div class="track-artist">${track.artist}</div>
+                        <button class="action-btn" style="background: #ef4444; color: white; width: 100%;" onclick="removeFromProfile(${track.id})">Удалить</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Remove from Profile
+        function removeFromProfile(id) {
+            profileTracks = profileTracks.filter(t => t !== id);
+            renderProfileTracks();
+        }
+
+        // Profile Edit
+        function showProfileEdit() {
+            document.getElementById('profileModal').classList.add('active');
+            document.getElementById('editUsername').value = profile.username;
+            document.getElementById('editBio').value = profile.bio;
+            document.getElementById('editAvatarEmoji').value = profile.avatarEmoji;
+            document.getElementById('editBannerEmoji').value = profile.bannerEmoji;
+        }
+
+        function closeProfileEdit() {
+            document.getElementById('profileModal').classList.remove('active');
+        }
+
+        // Handle Avatar Upload
+        document.getElementById('avatarFile').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    document.getElementById('avatarPreview').innerHTML = `<img src="${event.target.result}" class="preview-img">`;
+                    profile.avatar = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Handle Banner Upload
+        document.getElementById('bannerFile').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    document.getElementById('bannerPreview').innerHTML = `<img src="${event.target.result}" class="preview-img">`;
+                    profile.banner = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function saveProfile() {
+            profile.username = document.getElementById('editUsername').value;
+            profile.bio = document.getElementById('editBio').value;
+            profile.avatarEmoji = document.getElementById('editAvatarEmoji').value;
+            profile.bannerEmoji = document.getElementById('editBannerEmoji').value;
+
+            document.getElementById('profileUsername').textContent = profile.username;
+            document.getElementById('profileBio').textContent = profile.bio;
+
+            if (profile.avatar) {
+                document.getElementById('avatarImage').style.backgroundImage = `url(${profile.avatar})`;
+                document.getElementById('avatarImage').innerHTML = '';
+            } else {
+                document.getElementById('avatarImage').style.backgroundImage = 'none';
+                document.getElementById('avatarImage').innerHTML = `<div id="avatarEmoji">${profile.avatarEmoji}</div>`;
+            }
+
+            if (profile.banner) {
+                document.getElementById('bannerImage').style.backgroundImage = `url(${profile.banner})`;
+                document.getElementById('bannerImage').innerHTML = '';
+            } else {
+                document.getElementById('bannerImage').style.backgroundImage = 'none';
+                document.getElementById('bannerImage').innerHTML = `<div class="profile-banner-emoji" id="bannerEmoji">${profile.bannerEmoji}</div>`;
+            }
+
+            closeProfileEdit();
+        }
+
+        // Progress bar click
+        document.querySelector('.progress-bar').addEventListener('click', (e) => {
+            if (!currentTrack) return;
+            const rect = e.currentTarget.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            audio.currentTime = percent * audio.duration;
+        });
+
+        // Init
+        audio.volume = 0.7;
+    </script>
+</body>
+</html>
